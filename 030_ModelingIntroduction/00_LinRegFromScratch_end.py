@@ -66,6 +66,6 @@ print(f"Slope: {reg.coef_}, Bias: {reg.intercept_}")
 # if not computer restarted, append directly to PATH variable
 import os
 from torchviz import make_dot
-os.environ['PATH'] += os.pathsep + 'C:/Program Files (x86)/Graphviz/bin'
+os.environ['PATH'] += os.pathsep + 'C:/Program Files/Graphviz/bin'
 make_dot(loss_tensor)
 # %%

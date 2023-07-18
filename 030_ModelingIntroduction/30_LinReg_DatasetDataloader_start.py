@@ -3,7 +3,8 @@ import graphlib
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn 
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader 
 import seaborn as sns
 
 #%% data import
@@ -22,6 +23,20 @@ y_list = cars.mpg.values
 y_np = np.array(y_list, dtype=np.float32).reshape(-1,1)
 X = torch.from_numpy(X_np)
 y_true = torch.from_numpy(y_np)
+
+#%% Dataset and Dataloader
+class LinearRegressionDataset(Dataset):
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+    
+    def __len__(self):
+        return len(self.X)
+    
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
+
+train_loader = DataLoader(dataset = LinearRegressionDataset(X_np, y_np), batch_size=2)
 
 #%%
 class LinearRegressionTorch(nn.Module):
@@ -46,21 +61,24 @@ learning_rate = 0.02
 # best 0.02
 optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
+#%% check trainloader return
+for i, data in enumerate(train_loader):
+    print(data)
+
 #%% perform training
 losses = []
 slope, bias = [], []
-NUM_EPOCHS = 1000
-BATCH_SIZE = 2
-for epoch in range(NUM_EPOCHS):
-    for i in range(0, X.shape[0], BATCH_SIZE):
+number_epochs = 1000
+for epoch in range(number_epochs):
+    for j, (X, y) in enumerate(train_loader):
         # optimization
         optimizer.zero_grad()
 
         # forward pass
-        y_pred = model(X[i:i+BATCH_SIZE])
+        y_pred = model(X)
 
         # compute loss
-        loss = loss_fun(y_pred, y_true[i:i+BATCH_SIZE])
+        loss = loss_fun(y_pred, y)
         losses.append(loss.item())
 
         # backprop
@@ -84,17 +102,14 @@ for epoch in range(NUM_EPOCHS):
     if (epoch % 100 == 0):
         print(f"Epoch {epoch}, Loss: {loss.data}")
 
-    
-
 # %% visualise model training
 sns.scatterplot(x=range(len(losses)), y=losses)
 
 #%% visualise the bias development
-sns.lineplot(x=range(NUM_EPOCHS), y=bias)
+sns.lineplot(x=range(number_epochs), y=bias)
+
 #%% visualise the slope development
-sns.lineplot(x=range(NUM_EPOCHS), y=slope)
-
-
+sns.lineplot(x=range(number_epochs), y=slope)
 
 # %% check the result
 model.eval()
@@ -102,7 +117,9 @@ y_pred = [i[0] for i in model(X).data.numpy()]
 y = [i[0] for i in y_true.data.numpy()]
 sns.scatterplot(x=X_list, y=y)
 sns.lineplot(x=X_list, y=y_pred, color='red')
+
 # %%
 import hiddenlayer as hl
 graph = hl.build_graph(model, X)
+
 # %%

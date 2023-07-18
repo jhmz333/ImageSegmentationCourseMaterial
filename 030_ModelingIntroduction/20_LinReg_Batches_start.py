@@ -52,19 +52,22 @@ slope, bias = [], []
 NUM_EPOCHS = 1000
 BATCH_SIZE = 2
 for epoch in range(NUM_EPOCHS):
-    
-    # set gradients to zero
-    optimizer.zero_grad()
+    for i in range(0, X.shape[0], BATCH_SIZE):
+        # optimization
+        optimizer.zero_grad()
 
-    # forward pass
-    y_pred = model(X)
+        # forward pass
+        y_pred = model(X[i:i+BATCH_SIZE])
 
-    # calculate loss
-    loss = loss_fun(y_pred, y_true)
-    loss.backward()
+        # compute loss
+        loss = loss_fun(y_pred, y_true[i:i+BATCH_SIZE])
+        losses.append(loss.item())
 
-    # update parameters
-    optimizer.step()
+        # backprop
+        loss.backward()
+
+        # update weights
+        optimizer.step()
 
     # get parameters
     for name, param in model.named_parameters():
@@ -87,10 +90,9 @@ sns.scatterplot(x=range(len(losses)), y=losses)
 
 #%% visualise the bias development
 sns.lineplot(x=range(NUM_EPOCHS), y=bias)
+
 #%% visualise the slope development
 sns.lineplot(x=range(NUM_EPOCHS), y=slope)
-
-
 
 # %% check the result
 model.eval()
@@ -98,7 +100,9 @@ y_pred = [i[0] for i in model(X).data.numpy()]
 y = [i[0] for i in y_true.data.numpy()]
 sns.scatterplot(x=X_list, y=y)
 sns.lineplot(x=X_list, y=y_pred, color='red')
+
 # %%
 import hiddenlayer as hl
 graph = hl.build_graph(model, X)
+
 # %%
